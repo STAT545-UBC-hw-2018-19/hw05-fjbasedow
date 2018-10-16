@@ -7,6 +7,11 @@ Load packages
 
 ``` r
 library(tidyverse)
+```
+
+    ## Warning: package 'ggplot2' was built under R version 3.4.4
+
+``` r
 library(knitr)
 library(gapminder)
 ```
@@ -67,7 +72,7 @@ str(gapminder)
 
 ``` r
 no_OC <- gapminder %>% 
-  filter(continent %in% c("Europe", "Africa", "Asia", "Americas"))
+  filter(continent != "Oceania")
 
 levels(no_OC$continent)
 ```
@@ -198,7 +203,9 @@ Experiment with one or more of write\_csv()/read\_csv() (and/or TSV friends), sa
 
 Remake at least one figure or create a new one, in light of something you learned in the recent class meetings about visualization design and color. Maybe juxtapose your first attempt and what you obtained after some time spent working on it. Reflect on the differences. If using Gapminder, you can use the country or continent color scheme that ships with Gapminder. Consult the dimensions listed in All the Graph Things.
 
-Then, make a new graph by converting this visual (or another, if you’d like) to a plotly graph. What are some things that plotly makes possible, that are not possible with a regular ggplot2 graph? Part 4: Writing figures to file
+Then, make a new graph by converting this visual (or another, if you’d like) to a plotly graph. What are some things that plotly makes possible, that are not possible with a regular ggplot2 graph?
+
+#### Part 4: Writing figures to file
 
 Use ggsave() to explicitly save a plot to file. Then use `![Alt text](/path/to/img.png)` to load and embed it in your report. You can play around with various options, such as:
 
