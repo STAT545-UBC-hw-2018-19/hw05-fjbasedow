@@ -3,6 +3,14 @@ HW05-factor and figure management
 Frederike Basedow
 15 Oktober 2018
 
+Load packages
+
+``` r
+library(tidyverse)
+library(knitr)
+library(gapminder)
+```
+
 Goals:
 
 -   Reorder a factor in a principled way based on the data and demonstrate the effect in arranged data and in figures.
@@ -33,7 +41,154 @@ These explorations should involve the data, the factor levels, and some figures.
 
 **Drop Oceania.* Filter the Gapminder data to remove observations associated with the continent of Oceania. Additionally, remove unused factor levels. Provide concrete information on the data before and after removing these rows and Oceania; address the number of rows and the levels of the affected factors.*
 
+``` r
+levels(gapminder$continent)
+```
+
+    ## [1] "Africa"   "Americas" "Asia"     "Europe"   "Oceania"
+
+``` r
+nrow(gapminder)
+```
+
+    ## [1] 1704
+
+``` r
+str(gapminder)
+```
+
+    ## Classes 'tbl_df', 'tbl' and 'data.frame':    1704 obs. of  6 variables:
+    ##  $ country  : Factor w/ 142 levels "Afghanistan",..: 1 1 1 1 1 1 1 1 1 1 ...
+    ##  $ continent: Factor w/ 5 levels "Africa","Americas",..: 3 3 3 3 3 3 3 3 3 3 ...
+    ##  $ year     : int  1952 1957 1962 1967 1972 1977 1982 1987 1992 1997 ...
+    ##  $ lifeExp  : num  28.8 30.3 32 34 36.1 ...
+    ##  $ pop      : int  8425333 9240934 10267083 11537966 13079460 14880372 12881816 13867957 16317921 22227415 ...
+    ##  $ gdpPercap: num  779 821 853 836 740 ...
+
+``` r
+no_OC <- gapminder %>% 
+  filter(continent %in% c("Europe", "Africa", "Asia", "Americas"))
+
+levels(no_OC$continent)
+```
+
+    ## [1] "Africa"   "Americas" "Asia"     "Europe"   "Oceania"
+
+``` r
+nrow(no_OC)
+```
+
+    ## [1] 1680
+
+``` r
+str(no_OC)
+```
+
+    ## Classes 'tbl_df', 'tbl' and 'data.frame':    1680 obs. of  6 variables:
+    ##  $ country  : Factor w/ 142 levels "Afghanistan",..: 1 1 1 1 1 1 1 1 1 1 ...
+    ##  $ continent: Factor w/ 5 levels "Africa","Americas",..: 3 3 3 3 3 3 3 3 3 3 ...
+    ##  $ year     : int  1952 1957 1962 1967 1972 1977 1982 1987 1992 1997 ...
+    ##  $ lifeExp  : num  28.8 30.3 32 34 36.1 ...
+    ##  $ pop      : int  8425333 9240934 10267083 11537966 13079460 14880372 12881816 13867957 16317921 22227415 ...
+    ##  $ gdpPercap: num  779 821 853 836 740 ...
+
+``` r
+no_OC %>% 
+  ggplot(aes(continent, lifeExp)) +
+  geom_violin()
+```
+
+![](HW05-Factor_and_figure_management_files/figure-markdown_github/unnamed-chunk-2-1.png)
+
+Just filtering gapminder to remove Oceania, doesn't actually remove it. There are still the same number of countries. However, there are less rows in the data set and when you plot it Oceania is not shown. Let's drop the level and see what happens:
+
+``` r
+real_no_OC <- no_OC %>% droplevels()
+
+levels(real_no_OC$continent)
+```
+
+    ## [1] "Africa"   "Americas" "Asia"     "Europe"
+
+``` r
+nrow(real_no_OC)
+```
+
+    ## [1] 1680
+
+``` r
+str(real_no_OC)
+```
+
+    ## Classes 'tbl_df', 'tbl' and 'data.frame':    1680 obs. of  6 variables:
+    ##  $ country  : Factor w/ 140 levels "Afghanistan",..: 1 1 1 1 1 1 1 1 1 1 ...
+    ##  $ continent: Factor w/ 4 levels "Africa","Americas",..: 3 3 3 3 3 3 3 3 3 3 ...
+    ##  $ year     : int  1952 1957 1962 1967 1972 1977 1982 1987 1992 1997 ...
+    ##  $ lifeExp  : num  28.8 30.3 32 34 36.1 ...
+    ##  $ pop      : int  8425333 9240934 10267083 11537966 13079460 14880372 12881816 13867957 16317921 22227415 ...
+    ##  $ gdpPercap: num  779 821 853 836 740 ...
+
+Oceania is gone as a level, the number of countries is reduced and the number of rows is the same as before.
+
+We can also use `fct_drop` to drop specifically only the levels from continent, but leave the rest intact?
+
+``` r
+other_no_OC <- no_OC %>% 
+  mutate(continent = fct_drop(continent))
+
+str(other_no_OC)
+```
+
+    ## Classes 'tbl_df', 'tbl' and 'data.frame':    1680 obs. of  6 variables:
+    ##  $ country  : Factor w/ 142 levels "Afghanistan",..: 1 1 1 1 1 1 1 1 1 1 ...
+    ##  $ continent: Factor w/ 4 levels "Africa","Americas",..: 3 3 3 3 3 3 3 3 3 3 ...
+    ##  $ year     : int  1952 1957 1962 1967 1972 1977 1982 1987 1992 1997 ...
+    ##  $ lifeExp  : num  28.8 30.3 32 34 36.1 ...
+    ##  $ pop      : int  8425333 9240934 10267083 11537966 13079460 14880372 12881816 13867957 16317921 22227415 ...
+    ##  $ gdpPercap: num  779 821 853 836 740 ...
+
+``` r
+nrow(other_no_OC)
+```
+
+    ## [1] 1680
+
+``` r
+other_no_OC %>% 
+  filter(country == "Australia") %>% 
+  nrow() # see if we can still make use of the Oceania countries
+```
+
+    ## [1] 0
+
+Now all levels in the country factor are kept while Oceania is removed as a level from the factor continent. However, they are not used, as we can see when we filter for Australia, which gives us zero rows as an output. sp `droplevels` is more useful in removing not used factor levels.
+
 **Reorder the levels of country or continent.* Use the forcats package to change the order of the factor levels, based on a principled summary of one of the quantitative variables. Consider experimenting with a summary statistic beyond the most basic choice of the median.*
+
+Let's calculate and plot the median of lifeExp for each continent and plot it to see how it's automatically ordered.
+
+``` r
+gapminder %>% 
+  group_by(continent) %>% 
+  summarize(median = median(lifeExp)) %>% 
+  ggplot(aes(continent, median)) +
+  geom_bar(stat = "identity")
+```
+
+![](HW05-Factor_and_figure_management_files/figure-markdown_github/unnamed-chunk-5-1.png)
+
+Looks like it's ordered by alphabet. Let's arrange the data by median lifeExp instead.
+
+``` r
+gapminder %>% 
+  group_by(continent) %>% 
+  summarize(median = median(lifeExp)) %>% 
+  mutate(continent = fct_reorder(continent, median)) %>% 
+  ggplot(aes(continent, median)) +
+  geom_bar(stat = "identity")
+```
+
+![](HW05-Factor_and_figure_management_files/figure-markdown_github/unnamed-chunk-6-1.png)
 
 #### Part 2: File I/O
 

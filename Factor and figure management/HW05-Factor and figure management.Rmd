@@ -7,6 +7,13 @@ output:
   toc: yes
 ---
 
+Load packages
+```{r, message = FALSE}
+library(tidyverse)
+library(knitr)
+library(gapminder)
+```
+
 Goals:
 
 * Reorder a factor in a principled way based on the data and demonstrate the effect in arranged data and in figures.
@@ -36,7 +43,72 @@ __Elaboration for the gapminder data set__
 
 _*Drop Oceania.* Filter the Gapminder data to remove observations associated with the continent of Oceania. Additionally, remove unused factor levels. Provide concrete information on the data before and after removing these rows and Oceania; address the number of rows and the levels of the affected factors._
 
+```{r}
+levels(gapminder$continent)
+nrow(gapminder)
+str(gapminder)
+
+no_OC <- gapminder %>% 
+  filter(continent %in% c("Europe", "Africa", "Asia", "Americas"))
+
+levels(no_OC$continent)
+nrow(no_OC)
+str(no_OC)
+
+no_OC %>% 
+  ggplot(aes(continent, lifeExp)) +
+  geom_violin()
+```
+
+Just filtering gapminder to remove Oceania, doesn't actually remove it. There are still the same number of countries. However, there are less rows in the data set and when you plot it Oceania is not shown. Let's drop the level and see what happens:
+
+```{r}
+real_no_OC <- no_OC %>% droplevels()
+
+levels(real_no_OC$continent)
+nrow(real_no_OC)
+str(real_no_OC)
+```
+
+Oceania is gone as a level, the number of countries is reduced and the number of rows is the same as before.
+
+We can also use `fct_drop` to drop specifically only the levels from continent, but leave the rest intact?
+```{r}
+other_no_OC <- no_OC %>% 
+  mutate(continent = fct_drop(continent))
+
+str(other_no_OC)
+nrow(other_no_OC)
+
+other_no_OC %>% 
+  filter(country == "Australia") %>% 
+  nrow() # see if we can still make use of the Oceania countries
+```
+
+Now all levels in the country factor are kept while Oceania is removed as a level from the factor continent. However, they are not used, as we can see when we filter for Australia, which gives us zero rows as an output. sp `droplevels` is more useful in removing not used factor levels.
+
 _*Reorder the levels of country or continent.* Use the forcats package to change the order of the factor levels, based on a principled summary of one of the quantitative variables. Consider experimenting with a summary statistic beyond the most basic choice of the median._
+
+Let's calculate and plot the median of lifeExp for each continent and plot it to see how it's automatically ordered.
+```{r}
+gapminder %>% 
+  group_by(continent) %>% 
+  summarize(median = median(lifeExp)) %>% 
+  ggplot(aes(continent, median)) +
+  geom_bar(stat = "identity")
+```
+
+Looks like it's ordered by alphabet. Let's arrange the data by median lifeExp instead.
+
+```{r}
+gapminder %>% 
+  group_by(continent) %>% 
+  summarize(median = median(lifeExp)) %>% 
+  mutate(continent = fct_reorder(continent, median)) %>% 
+  ggplot(aes(continent, median)) +
+  geom_bar(stat = "identity")
+
+```
 
 #### Part 2: File I/O
 
