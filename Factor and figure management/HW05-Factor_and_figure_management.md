@@ -7,11 +7,6 @@ Load packages
 
 ``` r
 library(tidyverse)
-```
-
-    ## Warning: package 'ggplot2' was built under R version 3.4.4
-
-``` r
 library(knitr)
 library(gapminder)
 ```
@@ -100,7 +95,9 @@ str(no_OC)
 ``` r
 no_OC %>% 
   ggplot(aes(continent, lifeExp)) +
-  geom_violin()
+  geom_boxplot() +
+  theme_bw() +
+  labs(title = "Life Expectancy in different continents", x = "Continent", y = "Life Expectancy") 
 ```
 
 ![](HW05-Factor_and_figure_management_files/figure-markdown_github/unnamed-chunk-2-1.png)
@@ -133,7 +130,7 @@ str(real_no_OC)
     ##  $ pop      : int  8425333 9240934 10267083 11537966 13079460 14880372 12881816 13867957 16317921 22227415 ...
     ##  $ gdpPercap: num  779 821 853 836 740 ...
 
-Oceania is gone as a level, the number of countries is reduced and the number of rows is the same as before.
+Oceania is gone as a level and the number of levels of `country` is reduced as well.
 
 We can also use `fct_drop` to drop specifically only the levels from continent, but leave the rest intact?
 
@@ -159,6 +156,12 @@ nrow(other_no_OC)
     ## [1] 1680
 
 ``` r
+levels(other_no_OC$continent)
+```
+
+    ## [1] "Africa"   "Americas" "Asia"     "Europe"
+
+``` r
 other_no_OC %>% 
   filter(country == "Australia") %>% 
   nrow() # see if we can still make use of the Oceania countries
@@ -166,7 +169,7 @@ other_no_OC %>%
 
     ## [1] 0
 
-Now all levels in the country factor are kept while Oceania is removed as a level from the factor continent. However, they are not used, as we can see when we filter for Australia, which gives us zero rows as an output. sp `droplevels` is more useful in removing not used factor levels.
+Now all levels in the country factor are kept while Oceania is removed as a level from the factor continent. However, they are not used, as we can see when we filter for Australia, which gives us zero rows as an output. So `droplevels` is more useful in removing unused factor levels.
 
 **Reorder the levels of country or continent.* Use the forcats package to change the order of the factor levels, based on a principled summary of one of the quantitative variables. Consider experimenting with a summary statistic beyond the most basic choice of the median.*
 
@@ -177,23 +180,67 @@ gapminder %>%
   group_by(continent) %>% 
   summarize(median = median(lifeExp)) %>% 
   ggplot(aes(continent, median)) +
-  geom_bar(stat = "identity")
+  geom_bar(stat = "identity", width = 0.5, fill = "pink", colour = "grey40") +
+  labs(title = "Median Life Expectancy in Different Continents", x = "", y = "Median Life Expectancy (years)") +
+  theme_bw() + 
+  theme(
+    panel.background = element_rect(
+      fill = "grey60",
+      colour = "grey40",
+      size = 1
+    ),
+    panel.grid.major = element_line(
+      colour = NA
+    ),
+    panel.grid.minor = element_line(
+      colour = NA
+    ),
+    axis.text = element_text(
+      colour = "grey40",
+      size = 12
+    ),
+    axis.title.y = element_text(
+      size = 13
+    ))
 ```
 
 ![](HW05-Factor_and_figure_management_files/figure-markdown_github/unnamed-chunk-5-1.png)
 
-Looks like it's ordered by alphabet. Let's arrange the data by median lifeExp instead.
+Looks like it's ordered by alphabet. Let's arrange the data by decreasing median lifeExp instead.
 
 ``` r
 gapminder %>% 
   group_by(continent) %>% 
   summarize(median = median(lifeExp)) %>% 
-  mutate(continent = fct_reorder(continent, median)) %>% 
+  mutate(continent = fct_reorder(continent, median, .desc = TRUE)) %>% 
   ggplot(aes(continent, median)) +
-  geom_bar(stat = "identity")
+  geom_bar(stat = "identity", width = 0.5, fill = "pink", colour = "grey40") +
+  labs(title = "Median Life Expectancy in Different Continents", x = "", y = "Median Life Expectancy (years)") +
+  theme_bw() + 
+  theme(
+    panel.background = element_rect(
+      fill = "grey60",
+      colour = "grey40",
+      size = 1
+    ),
+    panel.grid.major = element_line(
+      colour = NA
+    ),
+    panel.grid.minor = element_line(
+      colour = NA
+    ),
+    axis.text = element_text(
+      colour = "grey40",
+      size = 12
+    ),
+    axis.title.y = element_text(
+      size = 13
+    ))
 ```
 
 ![](HW05-Factor_and_figure_management_files/figure-markdown_github/unnamed-chunk-6-1.png)
+
+Now it's nicely ordered by descending median life expectancy.
 
 #### Part 2: File I/O
 
@@ -201,9 +248,51 @@ Experiment with one or more of write\_csv()/read\_csv() (and/or TSV friends), sa
 
 #### Part 3: Visualization design
 
-Remake at least one figure or create a new one, in light of something you learned in the recent class meetings about visualization design and color. Maybe juxtapose your first attempt and what you obtained after some time spent working on it. Reflect on the differences. If using Gapminder, you can use the country or continent color scheme that ships with Gapminder. Consult the dimensions listed in All the Graph Things.
+\_ Remake at least one figure or create a new one, in light of something you learned in the recent class meetings about visualization design and color. Maybe juxtapose your first attempt and what you obtained after some time spent working on it. Reflect on the differences. If using Gapminder, you can use the country or continent color scheme that ships with Gapminder. Consult the dimensions listed in All the Graph Things.\_
 
-Then, make a new graph by converting this visual (or another, if you’d like) to a plotly graph. What are some things that plotly makes possible, that are not possible with a regular ggplot2 graph?
+I will use the singer data set for this because it feels like I've made every possible graph in gapminder throughout this course. I'll have to load it first:
+
+``` r
+# devtools::install_github("JoeyBernhardt/singer")
+library(singer)
+```
+
+Let's have a look at it:
+
+``` r
+str(songs)
+```
+
+    ## Classes 'tbl_df', 'tbl' and 'data.frame':    22 obs. of  3 variables:
+    ##  $ title      : chr  "Corduroy" "Grievance" "Stupidmop" "Present Tense" ...
+    ##  $ artist_name: chr  "Pearl Jam" "Pearl Jam" "Pearl Jam" "Pearl Jam" ...
+    ##  $ year       : int  1994 2000 1994 1996 1998 1996 1995 1992 1995 1993 ...
+
+``` r
+head(songs)
+```
+
+    ## # A tibble: 6 x 3
+    ##   title         artist_name  year
+    ##   <chr>         <chr>       <int>
+    ## 1 Corduroy      Pearl Jam    1994
+    ## 2 Grievance     Pearl Jam    2000
+    ## 3 Stupidmop     Pearl Jam    1994
+    ## 4 Present Tense Pearl Jam    1996
+    ## 5 MFC           Pearl Jam    1998
+    ## 6 Lukin         Pearl Jam    1996
+
+Cool, the songs data set has 3 variables: song title, artist name and year. Let's make a graph of the number of songs in the data set per year:
+
+``` r
+songs %>% 
+  ggplot(aes(year)) +
+  geom_bar()
+```
+
+![](HW05-Factor_and_figure_management_files/figure-markdown_github/unnamed-chunk-9-1.png)
+
+*Then, make a new graph by converting this visual (or another, if you’d like) to a plotly graph. What are some things that plotly makes possible, that are not possible with a regular ggplot2 graph? *
 
 #### Part 4: Writing figures to file
 
